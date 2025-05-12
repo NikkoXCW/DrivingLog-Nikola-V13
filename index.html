@@ -57,6 +57,12 @@
       margin-top: 20px;
       font-weight: bold;
     }
+    #status.success {
+      color: green;
+    }
+    #status.error {
+      color: red;
+    }
   </style>
 </head>
 <body>
@@ -164,6 +170,7 @@
       <textarea name="notes" rows="5" placeholder="Anything to add..."></textarea>
     </div>
 
+    <input type="hidden" name="submissionTimestamp" id="submissionTimestamp">
     <button type="submit">Submit</button>
   </form>
 
@@ -172,9 +179,33 @@
   <script>
     const form = document.getElementById("form");
     const status = document.getElementById("status");
+    const STORAGE_KEY = "drivingLogFormData";
 
+    // Restore saved data on load
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      for (const [key, value] of Object.entries(savedData)) {
+        const field = form.elements[key];
+        if (field) field.value = value;
+      }
+    });
+
+    // Save on input change
+    form.addEventListener("input", () => {
+      const formData = new FormData(form);
+      const data = {};
+      for (const [key, value] of formData.entries()) {
+        data[key] = value;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    });
+
+    // Handle form submission
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
+      // Add timestamp
+      document.getElementById("submissionTimestamp").value = new Date().toISOString();
 
       const formData = new FormData(form);
       const params = new URLSearchParams();
@@ -182,6 +213,7 @@
         params.append(key, value);
       }
 
+      status.className = "";
       status.innerText = "Submitting...";
 
       try {
@@ -192,10 +224,13 @@
 
         const text = await response.text();
         console.log("Response:", text);
+        status.className = "success";
         status.innerText = "Submitted successfully!";
         form.reset();
+        localStorage.removeItem(STORAGE_KEY); // Clear saved inputs
       } catch (error) {
         console.error("Submission error:", error);
+        status.className = "error";
         status.innerText = "Submission failed.";
       }
     });
