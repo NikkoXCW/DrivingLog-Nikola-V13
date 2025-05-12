@@ -214,6 +214,10 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      // Confirm submission
+      const confirmSubmit = window.confirm("Are you sure you want to submit this driving log?");
+      if (!confirmSubmit) return;
+
       // Add timestamp
       document.getElementById("submissionTimestamp").value = new Date().toISOString();
 
